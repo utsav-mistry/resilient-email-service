@@ -1,0 +1,15 @@
+{
+    "name": "resilient-email-service",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "test": "node test/EmailService.test.js && node test/RateLimiter.test.js && node test/IdempotencyStore.test.js && node test/CircuitBreaker.test.js && node test/EmailQueue.test.js"
+    },
+    "dependencies": {
+        "dotenv": "^16.5.0",
+        "express": "^4.21.2",
+        "mongodb": "^6.17.0"
+    }
+}
