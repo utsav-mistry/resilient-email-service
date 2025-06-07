@@ -16,8 +16,11 @@ export default class EmailService {
     }
 
     async sendEmail({ to, subject, body, messageId }) {
-        if (await this.idempotencyStore.has(messageId)) {
+        const isDuplicate = await this.idempotencyStore.has(messageId);
+
+        if (isDuplicate) {
             logger.warn(`Duplicate send attempt for messageId: ${messageId}`);
+            await logger.logEmail({ messageId, status: 'not sent', isDuplicate: true });
             return { status: 'duplicate' };
         }
 
@@ -34,9 +37,12 @@ export default class EmailService {
 
             try {
                 const response = await this._retry(() => provider.send({ to, subject, body }), 3);
-                await this.idempotencyStore.add(messageId); // ✅ async call
+                await this.idempotencyStore.add(messageId);
                 this.status.set(messageId, 'sent');
+
                 logger.info(`Email sent via ${provider.name} to ${to}`);
+                await logger.logEmail({ messageId, status: 'sent', isDuplicate: false });
+
                 return { status: 'sent', provider: provider.name, response };
             } catch (error) {
                 provider.circuit.recordFailure();
@@ -45,9 +51,10 @@ export default class EmailService {
         }
 
         this.status.set(messageId, 'failed');
+        await logger.logEmail({ messageId, status: 'failed', isDuplicate: false });
         return { status: 'failed' };
     }
-    
+
     async _retry(fn, retries, delay = 500) {
         let attempt = 0;
         while (attempt < retries) {
