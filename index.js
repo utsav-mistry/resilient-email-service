@@ -23,7 +23,7 @@ app.post('/send', async (req, res) => {
     }
 
     try {
-        const isDuplicate = await idempotencyStore.has(messageId);
+        const isDuplicate = await IdempotencyStore.has(messageId);
 
         if (isDuplicate) {
             return res.status(200).json({ status: 'duplicate', messageId });
