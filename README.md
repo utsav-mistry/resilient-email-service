@@ -60,7 +60,10 @@ curl -X POST http://localhost:3000/send \
 ```bash
 curl http://localhost:3000/status/unknown-id-xyz
 ```
-
+### Check all the logs
+```bash
+curl -X GET http://localhost:3000/logs
+```
 ## Render
 ### Queue an email (valid request)
 ```bash
@@ -88,4 +91,8 @@ curl -X POST https://resilient-email-service.onrender.com/send \
 ### Check unknown messageId status
 ```bash
 curl https://resilient-email-service.onrender.com/status/unknown-id-xyz
+```
+### Check all the logs
+```bash
+curl -X GET https://resilient-email-service.onrender.com/logs
 ```
