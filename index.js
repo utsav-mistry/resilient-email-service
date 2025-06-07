@@ -11,6 +11,7 @@ app.use(express.json());
 
 const emailService = new EmailService([new ProviderA(), new ProviderB()]);
 const emailQueue = new EmailQueue(emailService);
+const idempotencyStore = new IdempotencyStore();
 
 emailQueue.process((email) => emailService.sendEmail(email));
 
@@ -23,13 +24,13 @@ app.post('/send', async (req, res) => {
     }
 
     try {
-        const isDuplicate = await IdempotencyStore.has(messageId);
+        const isDuplicate = await idempotencyStore.has(messageId)
 
         if (isDuplicate) {
             return res.status(200).json({ status: 'duplicate', messageId });
         }
 
-        await IdempotencyStore.add(messageId);
+        await idempotencyStore.add(messageId)
 
         emailQueue.enqueue({ to, subject, body, messageId });
 
