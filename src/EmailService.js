@@ -2,6 +2,7 @@ import RateLimiter from './RateLimiter.js';
 import CircuitBreaker from './CircuitBreaker.js';
 import IdempotencyStore from './IdempotencyStore.js';
 import logger from './logger.js';
+import { connectToMongo } from './mongo.js';
 
 export default class EmailService {
     constructor(providers) {
@@ -12,7 +13,6 @@ export default class EmailService {
         }));
         this.rateLimiter = new RateLimiter(10, 60 * 1000);
         this.idempotencyStore = new IdempotencyStore();
-        this.status = new Map();
     }
 
     async sendEmail({ to, subject, body, messageId }) {
@@ -38,7 +38,6 @@ export default class EmailService {
             try {
                 const response = await this._retry(() => provider.send({ to, subject, body }), 3);
                 await this.idempotencyStore.add(messageId);
-                this.status.set(messageId, 'sent');
 
                 logger.info(`Email sent via ${provider.name} to ${to}`);
                 await logger.logEmail({ messageId, status: 'sent', isDuplicate: false });
@@ -50,7 +49,6 @@ export default class EmailService {
             }
         }
 
-        this.status.set(messageId, 'failed');
         await logger.logEmail({ messageId, status: 'failed', isDuplicate: false });
         return { status: 'failed' };
     }
@@ -68,7 +66,12 @@ export default class EmailService {
         }
     }
 
-    getStatus(messageId) {
-        return this.status.get(messageId) || 'unknown';
+
+    async getStatus(messageId) {
+        const client = await connectToMongo();
+        const collection = client.db("emailService").collection("logs");
+        const log = await collection.findOne({ messageId });
+        return log ? log.status : 'unknown';
     }
+    
 }
