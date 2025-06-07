@@ -69,7 +69,7 @@ export default class EmailService {
 
     async getStatus(messageId) {
         const client = await connectToMongo();
-        const collection = client.db("emailService").collection("logs");
+        const collection = client.db("resilientService").collection("emailLogs");
         const log = await collection.findOne({ messageId });
         return log ? log.status : 'unknown';
     }
