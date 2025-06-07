@@ -3,6 +3,7 @@ import EmailService from './src/EmailService.js';
 import EmailQueue from './src/EmailQueue.js';
 import ProviderA from './src/MockProviderA.js';
 import ProviderB from './src/MockProviderB.js';
+import logger from './src/logger.js';
 
 const app = express();
 app.use(express.json());
@@ -25,6 +26,16 @@ app.post('/send', (req, res) => {
 app.get('/status/:messageId', (req, res) => {
     const status = emailService.getStatus(req.params.messageId);
     res.json({ messageId: req.params.messageId, status });
+});
+
+app.get('/logs', async (req, res) => {
+    try {
+        const logs = await logger.getAllLogs();
+        res.json(logs);
+    } catch (err) {
+        console.error('Error retrieving logs:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
