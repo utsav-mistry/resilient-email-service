@@ -23,8 +23,8 @@ app.post('/send', (req, res) => {
     res.json({ status: 'queued', messageId });
 });
 
-app.get('/status/:messageId', (req, res) => {
-    const status = emailService.getStatus(req.params.messageId);
+app.get('/status/:messageId', async (req, res) => {
+    const status = await emailService.getStatus(req.params.messageId);
     res.json({ messageId: req.params.messageId, status });
 });
 
