@@ -4,6 +4,7 @@ import EmailQueue from './src/EmailQueue.js';
 import ProviderA from './src/MockProviderA.js';
 import ProviderB from './src/MockProviderB.js';
 import logger from './src/logger.js';
+import IdempotencyStore from './src/IdempotencyStore.js';
 
 const app = express();
 app.use(express.json());
@@ -13,15 +14,32 @@ const emailQueue = new EmailQueue(emailService);
 
 emailQueue.process((email) => emailService.sendEmail(email));
 
-app.post('/send', (req, res) => {
+
+app.post('/send', async (req, res) => {
     const { to, subject, body, messageId } = req.body;
+
     if (!to || !subject || !body || !messageId) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    emailQueue.enqueue({ to, subject, body, messageId });
-    res.json({ status: 'queued', messageId });
+    try {
+        const isDuplicate = await idempotencyStore.has(messageId);
+
+        if (isDuplicate) {
+            return res.status(200).json({ status: 'duplicate', messageId });
+        }
+
+        await IdempotencyStore.add(messageId);
+
+        emailQueue.enqueue({ to, subject, body, messageId });
+
+        return res.status(200).json({ status: 'queued', messageId });
+    } catch (err) {
+        console.error('Error in /send:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
 
 app.get('/status/:messageId', async (req, res) => {
     const status = await emailService.getStatus(req.params.messageId);
