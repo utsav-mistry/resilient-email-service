@@ -60,79 +60,180 @@ app.get('/logs', async (req, res) => {
 
 app.get('/', (req, res) => {
     res.send(`
-        <html>
+        <!DOCTYPE html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
             <title>Resilient Email Service - API Tester</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }
-                h2 { color: #333; }
-                pre { background: #eee; padding: 1rem; overflow-x: auto; }
-                button { margin: 0.5rem 0; padding: 0.5rem 1rem; }
-                .response { white-space: pre-wrap; background: #fff; border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; }
+                body {
+                    font-family: 'Segoe UI', sans-serif;
+                    padding: 2rem;
+                    background: #f4f4f4;
+                    color: #333;
+                }
+                h1 { margin-bottom: 1rem; }
+                h2 { margin-top: 2rem; font-size: 1.2rem; }
+                pre {
+                    background: #eee;
+                    padding: 1rem;
+                    overflow-x: auto;
+                    border-radius: 4px;
+                }
+                .response {
+                    white-space: pre-wrap;
+                    background: #fff;
+                    border-left: 5px solid #ccc;
+                    padding: 1rem;
+                    margin-top: 1rem;
+                    border-radius: 4px;
+                }
+                .success { border-left-color: #4CAF50; }
+                .error { border-left-color: #f44336; }
+                button {
+                    padding: 0.4rem 1rem;
+                    margin-top: 0.5rem;
+                    margin-right: 0.5rem;
+                    cursor: pointer;
+                    border: none;
+                    background-color: #007BFF;
+                    color: white;
+                    border-radius: 4px;
+                    transition: background 0.2s;
+                }
+                button:hover { background-color: #0056b3; }
+                #resetResponses {
+                    background-color: #dc3545;
+                }
+                #resetResponses:hover {
+                    background-color: #a71d2a;
+                }
+                #resetPayloads {
+                    background-color: #ffc107;
+                    color: #000;
+                }
+                #resetPayloads:hover {
+                    background-color: #d39e00;
+                }
+                textarea {
+                    width: 100%;
+                    height: 100px;
+                    font-family: monospace;
+                    font-size: 0.95rem;
+                    margin-top: 0.5rem;
+                    margin-bottom: 0.5rem;
+                    padding: 0.5rem;
+                    border-radius: 4px;
+                    border: 1px solid #ccc;
+                    resize: vertical;
+                }
+                .section {
+                    border-bottom: 1px solid #ccc;
+                    padding-bottom: 1rem;
+                    margin-bottom: 1rem;
+                }
             </style>
         </head>
         <body>
             <h1>Resilient Email Service - API Tester</h1>
-            <h2>Queue an email (valid request)</h2>
-            <pre><code>curl -X POST https://resilient-email-service.onrender.com/send \\
-  -H "Content-Type: application/json" \\
-  -d '{"to":"test@example.com","subject":"Hello","body":"This is a test email","messageId":"abc-123"}'</code></pre>
-            <button onclick="send('send1')">Run</button>
-            <div id="send1" class="response"></div>
-
-            <h2>Check status of a valid message</h2>
-            <pre><code>curl https://resilient-email-service.onrender.com/status/abc-123</code></pre>
-            <button onclick="send('status1', 'GET', '/status/abc-123')">▶ Run</button>
-            <div id="status1" class="response"></div>
-
-            <h2>Send duplicate email (should return status: duplicate)</h2>
-            <pre><code>curl -X POST https://resilient-email-service.onrender.com/send \\
-  -H "Content-Type: application/json" \\
-  -d '{"to":"test@example.com","subject":"Hello again","body":"Duplicate attempt","messageId":"abc-123"}'</code></pre>
-            <button onclick="send('send2')">Run</button>
-            <div id="send2" class="response"></div>
-
-            <h2>Send request with missing fields (should return 400 error)</h2>
-            <pre><code>curl -X POST https://resilient-email-service.onrender.com/send \\
-  -H "Content-Type: application/json" \\
-  -d '{"to":"test@example.com","subject":"Missing body"}'</code></pre>
-            <button onclick="send('send3')">Run</button>
-            <div id="send3" class="response"></div>
-
-            <h2>Check unknown messageId status</h2>
-            <pre><code>curl https://resilient-email-service.onrender.com/status/unknown-id-xyz</code></pre>
-            <button onclick="send('status2', 'GET', '/status/unknown-id-xyz')">▶ Run</button>
-            <div id="status2" class="response"></div>
-
-            <h2>Check all the logs</h2>
-            <pre><code>curl -X GET https://resilient-email-service.onrender.com/logs</code></pre>
-            <button onclick="send('logs', 'GET', '/logs')">Run</button>
-            <div id="logs" class="response"></div>
-
+            <button id="resetResponses" onclick="resetAll()">Reset Responses</button>
+            <button id="resetPayloads" onclick="resetPayloadEditors()">Reset API Payloads to Default</button>
+        
+            <div class="section">
+                <h2>Queue a Valid Email</h2>
+                <textarea id="payload-send1"></textarea>
+                <button onclick="sendRequest('send1')">▶ Run</button>
+                <div id="send1" class="response"></div>
+            </div>
+        
+            <div class="section">
+                <h2>Check Status (Valid)</h2>
+                <button onclick="sendRequest('status1', 'GET', '/status/abc-123')">▶ Run</button>
+                <div id="status1" class="response"></div>
+            </div>
+        
+            <div class="section">
+                <h2>Send Duplicate Email</h2>
+                <textarea id="payload-send2"></textarea>
+                <button onclick="sendRequest('send2')">▶ Run</button>
+                <div id="send2" class="response"></div>
+            </div>
+        
+        
+            <div class="section">
+                <h2>Unknown Message ID</h2>
+                <button onclick="sendRequest('status2', 'GET', '/status/unknown-id-xyz')">▶ Run</button>
+                <div id="status2" class="response"></div>
+            </div>
+        
+            <div class="section">
+                <h2>Get All Logs</h2>
+                <textarea rows="1" disabled style="width: 300px; resize: none; height:18px">/logs</textarea>
+                <br>
+                <button onclick="sendRequest('logs', 'GET', '/logs')">▶ Run</button>
+                <div id="logs" class="response"></div>
+            </div>
+        
             <script>
-                async function send(id, method = 'POST', url = '/send') {
-                    const payloads = {
-                        send1: { to: "test@example.com", subject: "Hello", body: "This is a test email", messageId: "abc-123" },
-                        send2: { to: "test@example.com", subject: "Hello again", body: "Duplicate attempt", messageId: "abc-123" },
-                        send3: { to: "test@example.com", subject: "Missing body" }
-                    };
-
+                const defaultPayloads = {
+                    send1: { to: "test@example.com", subject: "Hello", body: "This is a test email", messageId: "abc-123" },
+                    send2: { to: "test@example.com", subject: "Hello again", body: "Duplicate attempt", messageId: "abc-123" },
+                    send3: { to: "test@example.com", subject: "Missing body" }
+                };
+        
+                function resetPayloadEditors() {
+                    for (const id in defaultPayloads) {
+                        const editor = document.getElementById('payload-' + id);
+                        if (editor) {
+                            editor.value = JSON.stringify(defaultPayloads[id], null, 2);
+                        }
+                    }
+                }
+        
+                async function sendRequest(id, method = 'POST', url = '/send') {
+                    const resBox = document.getElementById(id);
+                    resBox.className = 'response';
+        
+                    let body = undefined;
+                    if (method === 'POST') {
+                        const text = document.getElementById('payload-' + id)?.value || '{}';
+                        try {
+                            body = JSON.stringify(JSON.parse(text)); // Validate JSON
+                        } catch {
+                            resBox.textContent = 'Invalid JSON payload';
+                            resBox.classList.add('error');
+                            return;
+                        }
+                    }
+        
                     try {
                         const res = await fetch(url, {
                             method,
                             headers: { 'Content-Type': 'application/json' },
-                            body: method === 'POST' ? JSON.stringify(payloads[id]) : undefined
+                            body
                         });
                         const data = await res.json();
-                        document.getElementById(id).textContent = JSON.stringify(data, null, 2);
+                        resBox.textContent = JSON.stringify(data, null, 2);
+                        resBox.classList.add(res.ok ? 'success' : 'error');
                     } catch (err) {
-                        document.getElementById(id).textContent = 'Error: ' + err.message;
+                        resBox.textContent = 'Error: ' + err.message;
+                        resBox.classList.add('error');
                     }
                 }
+        
+                function resetAll() {
+                    document.querySelectorAll('.response').forEach(el => {
+                        el.textContent = '';
+                        el.className = 'response';
+                    });
+                }
+        
+                window.onload = resetPayloadEditors;
             </script>
         </body>
         </html>
-    `);
+        `);
+        
 });
 
 
